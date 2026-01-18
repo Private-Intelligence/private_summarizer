@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Summarizer - Private AI Text Summarization</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@300;400;600&family=Noto+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #fafaf8;
+            --bg-secondary: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --accent: #c44536;
+            --border: #e8e8e4;
+            --shadow: rgba(0, 0, 0, 0.04);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans JP', 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, #fafaf8 0%, #f5f5f0 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 2rem;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        body.lang-ja {
+            font-family: 'Noto Sans JP', 'Inter', sans-serif;
+        }
+
+        body.lang-zh {
+            font-family: 'Noto Sans SC', 'Inter', sans-serif;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: slideDown 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 3rem;
+            font-weight: 300;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            letter-spacing: 0.05em;
+        }
+
+        .top-bar {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .language-switcher {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-secondary);
+            padding: 0.5rem;
+            border-radius: 50px;
+            box-shadow: 0 2px 10px var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .lang-btn {
+            background: transparent;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+
+        .lang-btn:hover {
+            background: var(--bg-primary);
+        }
+
+        .lang-btn.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .settings-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px var(--shadow);
+        }
+
+        .settings-btn:hover {
+            background: var(--bg-primary);
+            color: var(--accent);
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s backwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .panel {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px var(--shadow);
+            border: 1px solid var(--border);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent) 0%, transparent 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .panel:hover::before {
+            opacity: 1;
+        }
+
+        .panel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--shadow);
+        }
+
+        .panel-title {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.5rem;
+            font-weight: 400;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .icon {
+            font-size: 1.2rem;
+            opacity: 0.6;
+        }
+
+        .sample-note {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            font-style: italic;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 400px;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            line-height: 1.8;
+            resize: vertical;
+            transition: all 0.3s ease;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(196, 69, 54, 0.1);
+        }
+
+        .output {
+            min-height: 400px;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            line-height: 1.8;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .output h3 {
+            font-weight: 600;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            color: var(--accent);
+        }
+
+        .output h3:first-child {
+            margin-top: 0;
+        }
+
+        .output ul,
+        .output ol {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .output li {
+            margin-bottom: 0.5rem;
+        }
+
+        .output p {
+            margin-bottom: 0.5rem;
+        }
+
+        .output code {
+            background: var(--border);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .output em {
+            font-style: italic;
+        }
+
+        .output strong {
+            font-weight: 600;
+        }
+
+        .output.loading {
+            background: linear-gradient(90deg, var(--bg-primary) 0%, #f0f0ec 50%, var(--bg-primary) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .output:empty::before {
+            content: attr(data-placeholder);
+            color: var(--text-secondary);
+            opacity: 0.5;
+            font-style: italic;
+        }
+
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 15px rgba(196, 69, 54, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        button:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(196, 69, 54, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+            animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s backwards;
+        }
+
+        .status {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            min-height: 1.5rem;
+        }
+
+        .status.error {
+            color: var(--accent);
+        }
+
+        .status.success {
+            color: #2d7d46;
+        }
+
+        .privacy-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #e8f5e9;
+            color: #2d7d46;
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+
+        /* Settings Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.5rem;
+            font-weight: 400;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 0.5rem;
+            box-shadow: none;
+        }
+
+        .modal-close:hover {
+            color: var(--accent);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .setting-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .setting-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .setting-hint {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .setting-group textarea {
+            min-height: 150px;
+            font-size: 0.9rem;
+        }
+
+        .setting-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .setting-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(196, 69, 54, 0.1);
+        }
+
+        .model-defaults {
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        .setting-group input[type="range"] {
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        .range-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+
+        .btn-secondary {
+            background: var(--text-secondary);
+        }
+
+        .btn-reset {
+            background: transparent;
+            color: var(--text-secondary);
+            box-shadow: none;
+        }
+
+        .btn-reset:hover {
+            color: var(--accent);
+            box-shadow: none;
+        }
+
+        /* First run notice */
+        .notice {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .notice.show {
+            display: block;
+        }
+
+        .notice-title {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .notice-text {
+            font-size: 0.9rem;
+            color: #856404;
+        }
+
+        .notice-close {
+            float: right;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #856404;
+            font-size: 1.2rem;
+            padding: 0;
+            box-shadow: none;
+        }
+
+        .notice-close:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        @media (max-width: 968px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            body {
+                padding: 1rem;
+            }
+
+            .top-bar {
+                position: relative;
+                top: 0;
+                right: 0;
+                justify-content: center;
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-bar">
+            <div class="language-switcher">
+                <button class="lang-btn active" onclick="setLanguage('en')">EN</button>
+                <button class="lang-btn" onclick="setLanguage('zh')">中文</button>
+                <button class="lang-btn" onclick="setLanguage('ja')">日本語</button>
+            </div>
+            <button class="settings-btn" onclick="openSettings()" title="Settings">⚙️</button>
+        </div>
+
+        <header>
+            <h1 data-i18n="title">Local Summarizer</h1>
+            <p class="subtitle" data-i18n="subtitle">Private AI Text Summarization</p>
+            <div class="privacy-badge">
+                <span>🔒</span>
+                <span data-i18n="privacy">100% Private - Runs Locally</span>
+            </div>
+        </header>
+
+        <div id="firstRunNotice" class="notice">
+            <button class="notice-close" onclick="dismissNotice()">×</button>
+            <div class="notice-title" data-i18n="noticeTitle">First Run Notice</div>
+            <div class="notice-text" data-i18n="noticeText">The AI model (~2.5GB) will be downloaded on first use. This may take a few minutes depending on your connection. Subsequent runs will be much faster.</div>
+        </div>
+
+        <div class="workspace">
+            <div class="panel">
+                <h2 class="panel-title"><span class="icon">📝</span><span data-i18n="inputTitle">Input Text</span></h2>
+                <p class="sample-note" data-i18n="sampleNote">Sample call transcript loaded. Feel free to replace with your own text.</p>
+                <textarea id="inputText" data-i18n-placeholder="inputPlaceholder" placeholder="Enter text to summarize..."></textarea>
+            </div>
+
+            <div class="panel">
+                <h2 class="panel-title"><span class="icon">✨</span><span data-i18n="outputTitle">Summary</span></h2>
+                <div id="outputText" class="output" data-placeholder="Summary will appear here..."></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="summarizeBtn" onclick="summarize()" data-i18n="summarizeBtn">Generate Summary</button>
+            <button onclick="clearAll()" style="background: var(--text-secondary);" data-i18n="clearBtn">Clear</button>
+        </div>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" data-i18n="settingsTitle">Settings</h2>
+                <button class="modal-close" onclick="closeSettings()">×</button>
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-label" data-i18n="modelLabel">Model</label>
+                <p class="setting-hint" data-i18n="modelHint">Enter a Hugging Face model ID. Leave empty to use default based on language.</p>
+                <input type="text" id="customModel" class="setting-input" data-i18n-placeholder="modelPlaceholder" placeholder="e.g., LiquidAI/LFM2.5-1.2B-Instruct">
+                <p class="setting-hint model-defaults" data-i18n="modelDefaults">Defaults: EN/中文 → LFM2.5-1.2B-Instruct | 日本語 → LFM2.5-1.2B-JP</p>
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-label" data-i18n="promptLabel">Custom Prompt Template</label>
+                <p class="setting-hint" data-i18n="promptHint">Use {text} as placeholder for input text. Leave empty to use default.</p>
+                <textarea id="customPrompt" data-i18n-placeholder="promptPlaceholder" placeholder="Enter custom prompt..."></textarea>
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-label">
+                    <span data-i18n="temperatureLabel">Temperature</span>: <span id="tempValue">0.3</span>
+                </label>
+                <p class="setting-hint" data-i18n="temperatureHint">Lower = more focused, Higher = more creative</p>
+                <input type="range" id="temperature" min="0.1" max="1.0" step="0.1" value="0.3" oninput="updateTempValue()">
+                <div class="range-labels">
+                    <span data-i18n="focused">Focused</span>
+                    <span data-i18n="creative">Creative</span>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-label">
+                    <span data-i18n="maxTokensLabel">Max Output Length</span>: <span id="tokensValue">512</span>
+                </label>
+                <p class="setting-hint" data-i18n="maxTokensHint">Maximum number of tokens in the summary</p>
+                <input type="range" id="maxTokens" min="128" max="1024" step="64" value="512" oninput="updateTokensValue()">
+                <div class="range-labels">
+                    <span data-i18n="shorter">Shorter</span>
+                    <span data-i18n="longer">Longer</span>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-reset" onclick="resetSettings()" data-i18n="resetBtn">Reset to Default</button>
+                <button onclick="saveSettings()" data-i18n="saveBtn">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Internationalization (i18n)
+        const translations = {
+            en: {
+                title: "Local Summarizer",
+                subtitle: "Private AI Text Summarization",
+                privacy: "100% Private - Runs Locally",
+                inputTitle: "Input Text",
+                outputTitle: "Summary",
+                inputPlaceholder: "Enter text to summarize...",
+                outputPlaceholder: "Summary will appear here...",
+                summarizeBtn: "Generate Summary",
+                clearBtn: "Clear",
+                processing: "Processing...",
+                generating: "Generating AI summary...",
+                generatingFirst: "Downloading model & generating (first run may take a few minutes)...",
+                complete: "Summary complete",
+                errorNoText: "Please enter text to summarize",
+                errorConnection: "Cannot connect to backend server. Please ensure backend.py is running.",
+                errorGeneric: "An error occurred: ",
+                sampleNote: "Sample call transcript loaded. Feel free to replace with your own text.",
+                noticeTitle: "First Run Notice",
+                noticeText: "The AI model (~2.5GB) will be downloaded on first use. This may take a few minutes depending on your connection. Subsequent runs will be much faster.",
+                settingsTitle: "Settings",
+                modelLabel: "Model",
+                modelHint: "Enter a Hugging Face model ID. Leave empty to use default based on language.",
+                modelPlaceholder: "e.g., LiquidAI/LFM2.5-1.2B-Instruct",
+                modelDefaults: "Defaults: EN/中文 → LFM2.5-1.2B-Instruct | 日本語 → LFM2.5-1.2B-JP",
+                promptLabel: "Custom Prompt Template",
+                promptHint: "Use {text} as placeholder for input text. Leave empty to use default.",
+                promptPlaceholder: "Example: Summarize the following text in bullet points:\n\n{text}\n\nSummary:",
+                temperatureLabel: "Temperature",
+                temperatureHint: "Lower = more focused, Higher = more creative",
+                maxTokensLabel: "Max Output Length",
+                maxTokensHint: "Maximum number of tokens in the summary",
+                focused: "Focused",
+                creative: "Creative",
+                shorter: "Shorter",
+                longer: "Longer",
+                resetBtn: "Reset to Default",
+                saveBtn: "Save Settings",
+                sampleText: `Customer: Hello, I have a question about your service.
+
+Support: Thank you for calling. This is John from Customer Support. How may I help you today?
+
+Customer: I ordered a product online last week, but it hasn't arrived yet. My order number is #12345.
+
+Support: I apologize for the inconvenience. Let me check that for you right away. Please hold on a moment.
+
+(Checking)
+
+Support: Thank you for waiting. I've located your order. Due to shipping delays, your package is running about 2 days behind schedule. It should be dispatched today.
+
+Customer: I see. When will it arrive?
+
+Support: After dispatch, you can expect delivery within 2-3 business days. You'll be able to track the shipment with a tracking number. Would you like me to send you the tracking information?
+
+Customer: Yes, please. My email is example@email.com
+
+Support: Certainly. I'll send you an email with the tracking number today. As an apology for the delay, I'd also like to include a 10% discount coupon for your next order.
+
+Customer: Thank you, I appreciate that.
+
+Support: Thank you for your understanding. Is there anything else I can help you with?
+
+Customer: No, that's all.
+
+Support: Thank you for calling. Have a great day!`
+            },
+            zh: {
+                title: "本地摘要工具",
+                subtitle: "私有AI文本摘要",
+                privacy: "100% 隐私保护 - 本地运行",
+                inputTitle: "输入文本",
+                outputTitle: "摘要结果",
+                inputPlaceholder: "请输入需要摘要的文本...",
+                outputPlaceholder: "摘要将显示在这里...",
+                summarizeBtn: "生成摘要",
+                clearBtn: "清空",
+                processing: "处理中...",
+                generating: "正在生成AI摘要...",
+                generatingFirst: "正在下载模型并生成（首次运行可能需要几分钟）...",
+                complete: "摘要完成",
+                errorNoText: "请输入需要摘要的文本",
+                errorConnection: "无法连接到后端服务器。请确保 backend.py 正在运行。",
+                errorGeneric: "发生错误：",
+                sampleNote: "已加载示例通话记录。您可以替换为自己的文本。",
+                noticeTitle: "首次运行提示",
+                noticeText: "AI模型（约2.5GB）将在首次使用时下载。根据您的网络状况，这可能需要几分钟。之后的运行会快很多。",
+                settingsTitle: "设置",
+                modelLabel: "模型",
+                modelHint: "输入 Hugging Face 模型 ID。留空则根据语言自动选择默认模型。",
+                modelPlaceholder: "例如：LiquidAI/LFM2.5-1.2B-Instruct",
+                modelDefaults: "默认：EN/中文 → LFM2.5-1.2B-Instruct | 日本語 → LFM2.5-1.2B-JP",
+                promptLabel: "自定义提示词模板",
+                promptHint: "使用 {text} 作为输入文本的占位符。留空则使用默认提示词。",
+                promptPlaceholder: "示例：请用要点形式总结以下文本：\n\n{text}\n\n摘要：",
+                temperatureLabel: "温度",
+                temperatureHint: "较低 = 更专注，较高 = 更有创意",
+                maxTokensLabel: "最大输出长度",
+                maxTokensHint: "摘要的最大token数量",
+                focused: "专注",
+                creative: "创意",
+                shorter: "较短",
+                longer: "较长",
+                resetBtn: "恢复默认",
+                saveBtn: "保存设置",
+                sampleText: `客户：你好，我想咨询一下你们的服务。
+
+客服：感谢您的来电。我是客服小王，请问有什么可以帮您？
+
+客户：我上周在网上订购了一件商品，但还没有收到。我的订单号是 #12345。
+
+客服：非常抱歉给您带来不便。我马上为您查询，请稍等。
+
+（查询中）
+
+客服：让您久等了。我已经查到您的订单了。由于物流延误，您的包裹比预期晚了大约2天。预计今天会发出。
+
+客户：好的。什么时候能收到？
+
+客服：发货后，预计2-3个工作日内送达。您可以通过快递单号追踪物流信息。需要我把快递单号发给您吗？
+
+客户：好的，麻烦你了。我的邮箱是 example@email.com
+
+客服：好的。我今天会把快递单号发送到您的邮箱。另外，为了表示歉意，我们会附上下次购物可用的9折优惠券。
+
+客户：谢谢，太好了。
+
+客服：感谢您的理解。请问还有其他可以帮您的吗？
+
+客户：没有了，谢谢。
+
+客服：感谢您的来电，祝您生活愉快！`
+            },
+            ja: {
+                title: "ローカル要約ツール",
+                subtitle: "プライベートAIテキスト要約",
+                privacy: "100% プライベート - ローカル実行",
+                inputTitle: "入力テキスト",
+                outputTitle: "要約結果",
+                inputPlaceholder: "要約したいテキストを入力してください...",
+                outputPlaceholder: "要約がここに表示されます...",
+                summarizeBtn: "要約を生成",
+                clearBtn: "クリア",
+                processing: "処理中...",
+                generating: "AI要約を生成中...",
+                generatingFirst: "モデルをダウンロード中（初回は数分かかる場合があります）...",
+                complete: "要約が完了しました",
+                errorNoText: "入力テキストを入力してください",
+                errorConnection: "バックエンドサーバーに接続できません。backend.pyが起動しているか確認してください。",
+                errorGeneric: "エラーが発生しました: ",
+                sampleNote: "サンプルの通話記録が読み込まれています。自由にテキストを入れ替えてください。",
+                noticeTitle: "初回実行のお知らせ",
+                noticeText: "AIモデル（約2.5GB）は初回使用時にダウンロードされます。接続状況により数分かかる場合があります。2回目以降は高速に動作します。",
+                settingsTitle: "設定",
+                modelLabel: "モデル",
+                modelHint: "Hugging Face のモデル ID を入力。空欄の場合は言語に応じたデフォルトを使用。",
+                modelPlaceholder: "例：LiquidAI/LFM2.5-1.2B-Instruct",
+                modelDefaults: "デフォルト：EN/中文 → LFM2.5-1.2B-Instruct | 日本語 → LFM2.5-1.2B-JP",
+                promptLabel: "カスタムプロンプトテンプレート",
+                promptHint: "{text} を入力テキストのプレースホルダーとして使用。空欄の場合はデフォルトを使用。",
+                promptPlaceholder: "例：以下のテキストを箇条書きで要約してください：\n\n{text}\n\n要約：",
+                temperatureLabel: "温度",
+                temperatureHint: "低い = より正確、高い = より創造的",
+                maxTokensLabel: "最大出力長",
+                maxTokensHint: "要約の最大トークン数",
+                focused: "正確",
+                creative: "創造的",
+                shorter: "短い",
+                longer: "長い",
+                resetBtn: "デフォルトに戻す",
+                saveBtn: "設定を保存",
+                sampleText: `顧客: もしもし、御社のサービスについて質問があるのですが。
+
+担当者: お電話ありがとうございます。カスタマーサポートの田中と申します。どのようなご質問でしょうか。
+
+顧客: 先週、オンラインで商品を注文したのですが、まだ届いていないんです。注文番号は#12345です。
+
+担当者: ご不便をおかけして申し訳ございません。すぐに確認させていただきます。少々お待ちください。
+
+（確認中）
+
+担当者: お待たせいたしました。ご注文を確認させていただきました。配送業者の遅延により、通常より2日程度遅れているようです。本日中に発送される予定でございます。
+
+顧客: そうですか。いつ頃届きますか。
+
+担当者: 発送後、2〜3営業日でお届けできる見込みでございます。配送状況は追跡番号でご確認いただけます。追跡番号をお送りしてもよろしいでしょうか。
+
+顧客: はい、お願いします。メールアドレスは example@email.com です。
+
+担当者: かしこまりました。追跡番号を記載したメールを本日中にお送りいたします。また、遅延のお詫びとして、次回のご注文で使用できる10%割引クーポンもお送りさせていただきます。
+
+顧客: ありがとうございます。助かります。
+
+担当者: こちらこそ、ご理解いただきありがとうございます。他にご質問はございますか。
+
+顧客: いいえ、大丈夫です。
+
+担当者: ありがとうございました。今後ともよろしくお願いいたします。失礼いたします。`
+            }
+        };
+
+        let currentLang = 'en';
+        let isFirstRun = !localStorage.getItem('hasRunBefore');
+        let settings = loadSettings();
+
+        function loadSettings() {
+            const saved = localStorage.getItem('summarizerSettings');
+            return saved ? JSON.parse(saved) : {
+                customModel: '',
+                customPrompt: '',
+                temperature: 0.3,
+                maxTokens: 512
+            };
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            const t = translations[lang];
+
+            // Update body class for font
+            document.body.className = `lang-${lang}`;
+
+            // Update all translatable elements
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) {
+                    el.textContent = t[key];
+                }
+            });
+
+            // Update placeholders
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (t[key]) {
+                    el.placeholder = t[key];
+                }
+            });
+
+            // Update output placeholder
+            const outputEl = document.getElementById('outputText');
+            outputEl.setAttribute('data-placeholder', t.outputPlaceholder);
+
+            // Update HTML lang attribute
+            document.documentElement.lang = lang;
+
+            // Update language button states
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Load sample text for the selected language
+            document.getElementById('inputText').value = t.sampleText;
+
+            // Clear output
+            outputEl.innerHTML = '';
+            document.getElementById('status').textContent = '';
+
+            // Save preference
+            localStorage.setItem('preferredLanguage', lang);
+        }
+
+        // Convert markdown-like text to HTML
+        function markdownToHtml(text) {
+            let html = text;
+
+            // Convert 【Header】 style headers to <h3> (Japanese/Chinese style)
+            html = html.replace(/【(.+?)】/g, '<h3>$1</h3>');
+
+            // Convert ### Header style to <h3>
+            html = html.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
+            html = html.replace(/^##\s+(.+)$/gm, '<h3>$1</h3>');
+
+            // Convert **Header** on its own line to <h3> (English style)
+            html = html.replace(/^\*\*(.+?)\*\*$/gm, '<h3>$1</h3>');
+
+            // Split by lines and process each line
+            const lines = html.split('\n');
+            let result = [];
+            let inList = false;
+            let listType = null; // 'ul' or 'ol'
+
+            for (let line of lines) {
+                line = line.trim();
+
+                if (!line) {
+                    if (inList) {
+                        result.push(listType === 'ol' ? '</ol>' : '</ul>');
+                        inList = false;
+                        listType = null;
+                    }
+                    continue;
+                }
+
+                // Check if line is a bullet point
+                const bulletMatch = line.match(/^[-*]\s+(.+)$/);
+                // Check if line is a numbered list item
+                const numberMatch = line.match(/^\d+[.)]\s+(.+)$/);
+
+                if (bulletMatch) {
+                    if (inList && listType !== 'ul') {
+                        result.push('</ol>');
+                        inList = false;
+                    }
+                    if (!inList) {
+                        result.push('<ul>');
+                        inList = true;
+                        listType = 'ul';
+                    }
+                    result.push(`<li>${formatInline(bulletMatch[1])}</li>`);
+                } else if (numberMatch) {
+                    if (inList && listType !== 'ol') {
+                        result.push('</ul>');
+                        inList = false;
+                    }
+                    if (!inList) {
+                        result.push('<ol>');
+                        inList = true;
+                        listType = 'ol';
+                    }
+                    result.push(`<li>${formatInline(numberMatch[1])}</li>`);
+                } else if (line.startsWith('<h3>')) {
+                    if (inList) {
+                        result.push(listType === 'ol' ? '</ol>' : '</ul>');
+                        inList = false;
+                        listType = null;
+                    }
+                    result.push(line);
+                } else {
+                    if (inList) {
+                        result.push(listType === 'ol' ? '</ol>' : '</ul>');
+                        inList = false;
+                        listType = null;
+                    }
+                    result.push(`<p>${formatInline(line)}</p>`);
+                }
+            }
+
+            if (inList) {
+                result.push(listType === 'ol' ? '</ol>' : '</ul>');
+            }
+
+            return result.join('\n');
+        }
+
+        // Format inline markdown elements
+        function formatInline(text) {
+            // Bold: **text** or __text__
+            text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            text = text.replace(/__(.+?)__/g, '<strong>$1</strong>');
+            // Italic: *text* or _text_
+            text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+            text = text.replace(/_([^_]+)_/g, '<em>$1</em>');
+            // Inline code: `code`
+            text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+            return text;
+        }
+
+        async function summarize() {
+            const t = translations[currentLang];
+            const inputText = document.getElementById('inputText').value.trim();
+            const outputElement = document.getElementById('outputText');
+            const statusElement = document.getElementById('status');
+            const button = document.getElementById('summarizeBtn');
+
+            if (!inputText) {
+                statusElement.textContent = t.errorNoText;
+                statusElement.className = 'status error';
+                return;
+            }
+
+            // Disable button and show loading state
+            button.disabled = true;
+            button.textContent = t.processing;
+            outputElement.className = 'output loading';
+            outputElement.textContent = '';
+            statusElement.textContent = isFirstRun ? t.generatingFirst : t.generating;
+            statusElement.className = 'status';
+
+            try {
+                // Build request body
+                const requestBody = {
+                    text: inputText,
+                    language: currentLang
+                };
+
+                // Add custom settings if configured
+                if (settings.customModel) {
+                    requestBody.model = settings.customModel;
+                }
+                if (settings.customPrompt) {
+                    requestBody.custom_prompt = settings.customPrompt;
+                }
+                if (settings.temperature !== 0.3) {
+                    requestBody.temperature = settings.temperature;
+                }
+                if (settings.maxTokens !== 512) {
+                    requestBody.max_tokens = settings.maxTokens;
+                }
+
+                // Call backend API with language parameter
+                const response = await fetch('http://localhost:8000/summarize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Backend error');
+                }
+
+                const data = await response.json();
+                const summary = data.summary;
+
+                // Convert markdown to HTML and display
+                outputElement.innerHTML = markdownToHtml(summary);
+                outputElement.className = 'output';
+                statusElement.textContent = t.complete;
+                statusElement.className = 'status success';
+
+                // Mark first run complete
+                if (isFirstRun) {
+                    localStorage.setItem('hasRunBefore', 'true');
+                    isFirstRun = false;
+                }
+            } catch (error) {
+                outputElement.className = 'output';
+                outputElement.textContent = '';
+
+                // Provide helpful error messages
+                let errorMessage = t.errorGeneric;
+                if (error.message.includes('Failed to fetch')) {
+                    errorMessage = t.errorConnection;
+                } else {
+                    errorMessage += error.message;
+                }
+
+                statusElement.textContent = errorMessage;
+                statusElement.className = 'status error';
+            } finally {
+                button.disabled = false;
+                button.textContent = t.summarizeBtn;
+            }
+        }
+
+        function clearAll() {
+            document.getElementById('inputText').value = '';
+            document.getElementById('outputText').innerHTML = '';
+            document.getElementById('status').textContent = '';
+        }
+
+        // Settings functions
+        function openSettings() {
+            document.getElementById('settingsModal').classList.add('active');
+            document.getElementById('customModel').value = settings.customModel || '';
+            document.getElementById('customPrompt').value = settings.customPrompt;
+            document.getElementById('temperature').value = settings.temperature;
+            document.getElementById('maxTokens').value = settings.maxTokens;
+            updateTempValue();
+            updateTokensValue();
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('active');
+        }
+
+        function updateTempValue() {
+            document.getElementById('tempValue').textContent = document.getElementById('temperature').value;
+        }
+
+        function updateTokensValue() {
+            document.getElementById('tokensValue').textContent = document.getElementById('maxTokens').value;
+        }
+
+        function saveSettings() {
+            settings = {
+                customModel: document.getElementById('customModel').value.trim(),
+                customPrompt: document.getElementById('customPrompt').value,
+                temperature: parseFloat(document.getElementById('temperature').value),
+                maxTokens: parseInt(document.getElementById('maxTokens').value)
+            };
+            localStorage.setItem('summarizerSettings', JSON.stringify(settings));
+            closeSettings();
+        }
+
+        function resetSettings() {
+            settings = {
+                customModel: '',
+                customPrompt: '',
+                temperature: 0.3,
+                maxTokens: 512
+            };
+            document.getElementById('customModel').value = '';
+            document.getElementById('customPrompt').value = '';
+            document.getElementById('temperature').value = 0.3;
+            document.getElementById('maxTokens').value = 512;
+            updateTempValue();
+            updateTokensValue();
+            localStorage.removeItem('summarizerSettings');
+        }
+
+        function dismissNotice() {
+            document.getElementById('firstRunNotice').classList.remove('show');
+            localStorage.setItem('noticeDismissed', 'true');
+        }
+
+        // Close modal on overlay click
+        document.getElementById('settingsModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSettings();
+            }
+        });
+
+        // Allow Enter key to trigger summarization (Ctrl/Cmd + Enter)
+        document.getElementById('inputText').addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                summarize();
+            }
+        });
+
+        // Close modal on Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeSettings();
+            }
+        });
+
+        // Initialize with saved language preference or browser language
+        document.addEventListener('DOMContentLoaded', function() {
+            // Show first run notice if applicable
+            if (isFirstRun && !localStorage.getItem('noticeDismissed')) {
+                document.getElementById('firstRunNotice').classList.add('show');
+            }
+
+            const savedLang = localStorage.getItem('preferredLanguage');
+            const browserLang = navigator.language.substring(0, 2);
+
+            let initialLang = 'en';
+            if (savedLang && translations[savedLang]) {
+                initialLang = savedLang;
+            } else if (browserLang === 'ja') {
+                initialLang = 'ja';
+            } else if (browserLang === 'zh') {
+                initialLang = 'zh';
+            }
+
+            // Find and click the appropriate language button
+            const langBtns = document.querySelectorAll('.lang-btn');
+            langBtns.forEach(btn => {
+                if ((initialLang === 'en' && btn.textContent === 'EN') ||
+                    (initialLang === 'zh' && btn.textContent === '中文') ||
+                    (initialLang === 'ja' && btn.textContent === '日本語')) {
+                    btn.click();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
